@@ -41,7 +41,7 @@ log.info "\n"
 genome_file                   = file(params.genome)
 annotation_file               = file(params.annotation) 
 index_file                    = file(params.index)
-index_file1                   = index_file.fileName() + ".1.ht2"
+index_file1                   = index_file.getFileName() + ".1.ht2"
 
 /*
  * validate input files
@@ -55,7 +55,7 @@ if( !annotation_file.exists() ) exit 1, "Missing annotation file: ${annotation_f
  */
  
 Channel
-    .fromFilePairs( params.seqs, size: -1 )
+    .fromFilePairs( params.seqs, size: -1 , flat: true)
     .ifEmpty { error "Cannot find any reads matching: ${params.seqs}" }
     .set { read_files } 
 
@@ -94,9 +94,6 @@ if (params.run_index) {
         mv genome_index* index_dir/.
         """
     }
-    process prepare_index {
-
-    }
 }    
 
 process mapping {
@@ -116,15 +113,13 @@ process mapping {
     def single = reads instanceof Path
     if( single ) {
         """
-        mv ${index_dir}/* .
-        hisat2 -x genome_index -U ${reads} -S ${name}.sam 2> ${name}.alnstats
+        hisat2 -x ${index_dir}/genome_index -U ${reads[0]} -S ${name}.sam 2> ${name}.alnstats
 
         """
     }  
     else {
         """
-        mv ${index_dir}/* .
-        hisat2 -x genome_index -1 ${reads}[0] -2 ${reads}[1] -S ${name}.sam 2> ${name}.alnstats
+        hisat2 -x ${index_dir}/genome_index -1 ${reads[0]} -2 ${reads[1]} -S ${name}.sam 2> ${name}.alnstats
         """
     }
 
