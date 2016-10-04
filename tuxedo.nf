@@ -26,7 +26,7 @@
 
 log.info "T U X E D O - N F  ~  version 0.1"
 log.info "====================================="
-log.info "reads                  : ${params.seqs}"
+log.info "reads                  : ${params.reads}"
 log.info "genome                 : ${params.genome}"
 log.info "index                  : ${params.index}"
 log.info "annotation             : ${params.annotation}"
@@ -40,8 +40,11 @@ log.info "\n"
 
 genome_file                   = file(params.genome)
 annotation_file               = file(params.annotation) 
+
 index_file                    = file(params.index)
-index_file1                   = index_file.getFileName() + ".1.ht2"
+index_file1                   = index_file + ".1.ht2"
+index_name                    = index_file.getFileName()
+index_dir                     = index_file.getParent()
 
 /*
  * validate input files
@@ -55,23 +58,20 @@ if( !annotation_file.exists() ) exit 1, "Missing annotation file: ${annotation_f
  */
  
 Channel
-    .fromFilePairs( params.seqs, size: -1 , flat: true)
+    .fromFilePairs( params.reads, size: -1 , flat: true)
     .ifEmpty { error "Cannot find any reads matching: ${params.seqs}" }
     .set { read_files } 
 
 
-
 /*
- * Prepare index files if required
+ * Check index files if required
  */
 if( !params.run_index ) {
-    if ( index.file1.exists() ) {
-        premade_genome_index = index_file
+    if ( !index_file1.exists() ) {
+        exit 1, "Missing genome index file: ${index_file1}"
     }
 }
      
-
-
 
 // GENOME INDEXING
 // ===============
@@ -92,6 +92,25 @@ if (params.run_index) {
         hisat2-build ${genome_file} genome_index
         mkdir index_dir
         mv genome_index* index_dir/.
+        """
+    }
+}
+else {
+    process premade_index {
+        input:
+        file index_dir
+        val index_name
+
+        output:
+        file "index_dir" into genome_index
+
+        script:
+        //
+        // Premade HISAT2 genome index
+        //
+        """
+        mkdir index_dir
+        cp ${index_dir}/${index_name}.*.ht2 index_dir/.
         """
     }
 }    
