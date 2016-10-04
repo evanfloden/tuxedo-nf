@@ -123,7 +123,7 @@ process mapping {
     set val(name), file(reads) from read_files
 
     output:
-    file "${name}.sam" into hisat2_sams 
+    set val("${name}"), file("${name}.sam") into hisat2_sams 
 
     script:
     //
@@ -141,5 +141,49 @@ process mapping {
         hisat2 -x ${index_dir}/genome_index -1 ${reads[0]} -2 ${reads[1]} -S ${name}.sam 2> ${name}.alnstats
         """
     }
+ 
 
 }
+
+process sam2bam {
+    tag "sam2bam: $name"
+
+    input:
+    set val(name), file(sam) from hisat2_sams
+
+    output:
+    set val("${name}"), file("${name}.bam") into hisat2_bams
+
+    script:
+    //
+    // SAM to sorted BAM files
+    //
+    """
+    
+    samtools view -S -b ${sam} | samtools sort -o ${name}.bam -    
+
+    """
+}
+
+process stringtie_assemble_transcripts {
+    tag "stringtie assemble transcripts: $name"
+
+    input:
+    set val(name), file(bam) from hisat2_bams
+    file annotation_file
+
+    output:
+    set val("${name}"), file("${name}.gtf") into hisat2_transcripts
+
+    script:
+    //
+    // Assemble Transcripts per sample
+    //
+    """
+    
+    stringtie -p ${task.cpus} -G ${annotation_file} -o ${name}.gtf -l ${name} ${bam}
+
+    """
+}   
+
+

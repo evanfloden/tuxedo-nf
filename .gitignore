@@ -1,3 +1,4 @@
+trace.*
 .nextflow*
 work/*
 results/*
