@@ -1,0 +1,126 @@
+Oct-04 10:53:35.361 [main] DEBUG nextflow.cli.Launcher - $> /users/cn/efloden/bin/nextflow run tuxedo.nf -profile crg -with-docker
+Oct-04 10:53:35.572 [main] INFO  nextflow.cli.CmdRun - N E X T F L O W  ~  version 0.22.1
+Oct-04 10:53:35.588 [main] INFO  nextflow.cli.CmdRun - Launching `tuxedo.nf` [grave_bhabha] - revision: 743498e76e
+Oct-04 10:53:35.602 [main] DEBUG nextflow.config.ConfigBuilder - Found config local: nextflow.config
+Oct-04 10:53:35.604 [main] DEBUG nextflow.config.ConfigBuilder - Parsing config file: /nfs/users2/cn/efloden/projects/tuxedo-nf/nextflow.config
+Oct-04 10:53:35.919 [main] DEBUG nextflow.config.ConfigBuilder - Setting config profile: 'crg'
+Oct-04 10:53:36.043 [main] DEBUG nextflow.config.ConfigBuilder - Enabling execution in Docker container as requested by cli option `-with-docker -`
+Oct-04 10:53:36.068 [main] DEBUG nextflow.Session - Session uuid: 035e0bf1-53bd-42f4-bbf7-5c1fd8d6e7d6
+Oct-04 10:53:36.069 [main] DEBUG nextflow.Session - Run name: grave_bhabha
+Oct-04 10:53:36.071 [main] DEBUG nextflow.Session - Executor pool size: 16
+Oct-04 10:53:36.083 [main] DEBUG nextflow.cli.CmdRun - 
+  Version: 0.22.1 build 4075
+  Modified: 26-09-2016 10:10 UTC (12:10 CEST)
+  System: Linux 2.6.32-504.23.4.el6.x86_64
+  Runtime: Groovy 2.4.7 on Java HotSpot(TM) 64-Bit Server VM 1.7.0_60-b19
+  Encoding: UTF-8 (UTF-8)
+  Process: 60320@ant-login9.linux.crg.es [172.17.16.33]
+  CPUs: 16 - Mem: 126 GB (22.1 GB) - Swap: 32 GB (31.4 GB)
+Oct-04 10:53:36.109 [main] DEBUG nextflow.Session - Work-dir: /nfs/users2/cn/efloden/projects/tuxedo-nf/work [nfs]
+Oct-04 10:53:36.109 [main] DEBUG nextflow.Session - Script base path does not exist or is not a directory: /nfs/users2/cn/efloden/projects/tuxedo-nf/bin
+Oct-04 10:53:36.261 [main] DEBUG nextflow.Session - Session start invoked
+Oct-04 10:53:36.268 [main] DEBUG nextflow.processor.TaskDispatcher - Dispatcher > start
+Oct-04 10:53:36.270 [main] DEBUG nextflow.script.ScriptRunner - > Script parsing
+Oct-04 10:53:36.453 [main] DEBUG nextflow.script.ScriptRunner - > Launching execution
+Oct-04 10:53:36.456 [main] INFO  nextflow.Nextflow - T U X E D O - N F  ~  version 0.1
+Oct-04 10:53:36.457 [main] INFO  nextflow.Nextflow - =====================================
+Oct-04 10:53:36.457 [main] INFO  nextflow.Nextflow - reads                  : example-data/reads/ERR*_chrX_{1,2}.fastq.gz
+Oct-04 10:53:36.457 [main] INFO  nextflow.Nextflow - genome                 : /nfs/users2/cn/efloden/projects/tuxedo-nf/example-data/genome/chrX.fa
+Oct-04 10:53:36.457 [main] INFO  nextflow.Nextflow - index                  : /nfs/users2/cn/efloden/projects/tuxedo-nf/example-data/index/chrX.fa.index
+Oct-04 10:53:36.457 [main] INFO  nextflow.Nextflow - annotation             : /nfs/users2/cn/efloden/projects/tuxedo-nf/example-data/annotation/hg38_chrX_ucsc.annotated.gtf
+Oct-04 10:53:36.457 [main] INFO  nextflow.Nextflow - run index              : true
+Oct-04 10:53:36.457 [main] INFO  nextflow.Nextflow - output                 : /nfs/users2/cn/efloden/projects/tuxedo-nf/results/
+Oct-04 10:53:36.457 [main] INFO  nextflow.Nextflow - 
+
+Oct-04 10:53:36.481 [main] DEBUG nextflow.Channel - files for syntax: glob; folder: example-data/reads/; pattern: ERR*_chrX_{1,2}.fastq.gz; options: [:]
+Oct-04 10:53:36.654 [main] DEBUG nextflow.processor.ProcessFactory - << taskConfig executor: crg
+Oct-04 10:53:36.654 [main] DEBUG nextflow.processor.ProcessFactory - >> processorType: 'crg'
+Oct-04 10:53:36.668 [main] DEBUG nextflow.executor.Executor - Initializing executor: crg
+Oct-04 10:53:36.670 [main] INFO  nextflow.executor.Executor - [warm up] executor > crg
+Oct-04 10:53:36.675 [main] DEBUG n.processor.TaskPollingMonitor - Creating task monitor for executor 'crg' > capacity: 100; pollInterval: 1s; dumpInterval: 5m 
+Oct-04 10:53:36.678 [main] DEBUG nextflow.processor.TaskDispatcher - Starting monitor: TaskPollingMonitor
+Oct-04 10:53:36.678 [main] DEBUG n.processor.TaskPollingMonitor - >>> barrier register (monitor: crg)
+Oct-04 10:53:36.680 [main] DEBUG nextflow.executor.Executor - Invoke register for executor: crg
+Oct-04 10:53:36.681 [main] DEBUG n.executor.AbstractGridExecutor - Creating executor 'crg' > queue-stat-interval: 1m
+Oct-04 10:53:36.721 [main] DEBUG nextflow.Session - >>> barrier register (process: genome_index)
+Oct-04 10:53:36.733 [main] DEBUG nextflow.processor.TaskProcessor - Creating operator > genome_index -- maxForks: 16
+Oct-04 10:53:36.754 [Actor Thread 1] DEBUG nextflow.processor.TaskProcessor - <genome_index> Poison pill arrived
+Oct-04 10:53:36.756 [Actor Thread 3] DEBUG nextflow.processor.StateObj - <genome_index> State before poison: StateObj[submitted: 1; completed: 0; poisoned: false ]
+Oct-04 10:53:36.775 [main] DEBUG nextflow.processor.ProcessFactory - << taskConfig executor: crg
+Oct-04 10:53:36.775 [main] DEBUG nextflow.processor.ProcessFactory - >> processorType: 'crg'
+Oct-04 10:53:36.775 [main] DEBUG nextflow.executor.Executor - Initializing executor: crg
+Oct-04 10:53:36.776 [main] DEBUG n.executor.AbstractGridExecutor - Creating executor 'crg' > queue-stat-interval: 1m
+Oct-04 10:53:36.776 [main] DEBUG nextflow.Session - >>> barrier register (process: mapping)
+Oct-04 10:53:36.787 [main] DEBUG nextflow.processor.TaskProcessor - Creating operator > mapping -- maxForks: 16
+Oct-04 10:53:36.790 [main] DEBUG nextflow.script.ScriptRunner - > Await termination 
+Oct-04 10:53:36.790 [main] DEBUG nextflow.Session - Session await
+Oct-04 10:53:36.838 [Actor Thread 2] DEBUG nextflow.executor.GridTaskHandler - Launching process > genome_index (1) -- work folder: /nfs/users2/cn/efloden/projects/tuxedo-nf/work/17/1ea908a9c078492be05e4ce52146a2
+Oct-04 10:53:36.973 [Actor Thread 2] INFO  nextflow.Session - [17/1ea908] Submitted process > genome_index (1)
+Oct-04 10:53:36.975 [Actor Thread 1] DEBUG nextflow.processor.TaskProcessor - <genome_index> After stop
+Oct-04 10:54:38.765 [Thread-2] ERROR nextflow.processor.TaskProcessor - Error executing process > 'genome_index (1)'
+
+Caused by:
+  Process `genome_index (1)` terminated with an error exit status (127)
+
+Command executed:
+
+  hisat2-build chrX.fa genome_index
+  mkdir index_dir
+  mv genome_index* index_dir/.
+
+Command exit status:
+  127
+
+Command output:
+  (empty)
+
+Command error:
+  Unable to find image 'cbcrg/tuxedo-nf@sha256:8663c6ff510cb347b20fc2315cd3009d1b2567a36020a62bd4053182c5d01d8c' locally
+  sha256:8663c6ff510cb347b20fc2315cd3009d1b2567a36020a62bd4053182c5d01d8c: Pulling from cbcrg/tuxedo-nf
+  6a5a5368e0c2: Pulling fs layer
+  20edd49728c9: Pulling fs layer
+  a2841bd209a7: Pulling fs layer
+  c79f1054c9f0: Pulling fs layer
+  115a004260d7: Pulling fs layer
+  24f999011d2a: Pulling fs layer
+  33dadcd38fa3: Pulling fs layer
+  c79f1054c9f0: Waiting
+  115a004260d7: Waiting
+  33dadcd38fa3: Waiting
+  a2841bd209a7: Verifying Checksum
+  a2841bd209a7: Download complete
+  6a5a5368e0c2: Verifying Checksum
+  6a5a5368e0c2: Download complete
+  c79f1054c9f0: Verifying Checksum
+  c79f1054c9f0: Download complete
+  115a004260d7: Verifying Checksum
+  115a004260d7: Download complete
+  20edd49728c9: Verifying Checksum
+  20edd49728c9: Download complete
+  33dadcd38fa3: Verifying Checksum
+  33dadcd38fa3: Download complete
+  24f999011d2a: Verifying Checksum
+  24f999011d2a: Download complete
+  6a5a5368e0c2: Pull complete
+  20edd49728c9: Pull complete
+  a2841bd209a7: Pull complete
+  c79f1054c9f0: Pull complete
+  115a004260d7: Pull complete
+  24f999011d2a: Pull complete
+  33dadcd38fa3: Pull complete
+  Digest: sha256:8663c6ff510cb347b20fc2315cd3009d1b2567a36020a62bd4053182c5d01d8c
+  Status: Downloaded newer image for cbcrg/tuxedo-nf@sha256:8663c6ff510cb347b20fc2315cd3009d1b2567a36020a62bd4053182c5d01d8c
+  .command.sh: line 2: hisat2-build: command not found
+
+Work dir:
+  /nfs/users2/cn/efloden/projects/tuxedo-nf/work/17/1ea908a9c078492be05e4ce52146a2
+
+Tip: you can try to figure out what's wrong by changing to the process work dir and showing the script file named: '.command.sh'
+Oct-04 10:54:38.770 [Thread-2] DEBUG nextflow.Session - Session aborted -- Cause: Process `genome_index (1)` terminated with an error exit status (127)
+Oct-04 10:54:38.771 [Actor Thread 3] DEBUG nextflow.processor.TaskProcessor - <genome_index> Sending poison pills and terminating process
+Oct-04 10:54:38.776 [main] DEBUG nextflow.Session - Session await > processes completed
+Oct-04 10:54:38.776 [Thread-2] DEBUG n.processor.TaskPollingMonitor - <<< barrier arrives (monitor: crg)
+Oct-04 10:54:38.777 [main] DEBUG nextflow.Session - Session await > done
+Oct-04 10:54:38.777 [Actor Thread 3] DEBUG nextflow.Session - <<< barrier arrive (process: genome_index)
+Oct-04 10:54:38.779 [Actor Thread 6] DEBUG nextflow.processor.TaskProcessor - <mapping> After stop
+Oct-04 10:54:38.935 [main] DEBUG nextflow.Session - Session destroyed
