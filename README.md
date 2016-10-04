@@ -4,7 +4,6 @@ A Nextflow implementation of the Tuxedo Suite of Tools
 
 Based on Nature Protocols: ["Transcript-level expression analysis of RNA-seq experiments with HISAT, StringTie and Ballgown"](http://www.nature.com/nprot/journal/v11/n9/full/nprot.2016.095.html)
 
-![CircleCI status](https://circleci.com/gh/cbcrg/tuxedo-nf.png?style=shield)
 [![nextflow](https://img.shields.io/badge/nextflow-%E2%89%A50.22.0-brightgreen.svg)](http://nextflow.io)
 
 ## Quick start 
