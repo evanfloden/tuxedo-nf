@@ -10,7 +10,7 @@ Based on Nature Protocols: ["Transcript-level expression analysis of RNA-seq exp
 
 Download the example dataset using the following commands:
 
-    $ wget -O- http://genome.crg.es/~efloden/tuxexdo-nf/example-data.tar.gz | tar xzf
+    $ wget -O- http://genome.crg.es/~efloden/tuxedo-nf/example-data.tar.gz | tar xzf
 
 
 Make sure you have all the required dependencies listed in the last section.
