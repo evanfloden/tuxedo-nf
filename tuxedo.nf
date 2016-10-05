@@ -285,9 +285,6 @@ process ballgown {
     write.csv(results_transcripts, "chrX_transcripts_results.csv", row.names=FALSE)
     write.csv(results_genes, "chrX_genes_results.csv", row.names=FALSE)
 
-    subset(results_transcripts, results_transcripts$qval <=0.05)
-    subset(results_genes, results_genes$qval <=0.05)
-
     '''
 }
 
