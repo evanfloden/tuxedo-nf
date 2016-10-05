@@ -8,6 +8,12 @@ Based on Nature Protocols: ["Transcript-level expression analysis of RNA-seq exp
 
 ## Quick start 
 
+Download the example dataset using the following commands:
+
+    $ mkdir example-data
+    $ wget -O- http://genome.crg.es/~efloden/tuxexdo-nf/example-data.tar.gz | tar xz -C example-data
+
+
 Make sure you have all the required dependencies listed in the last section.
 
 Install the Nextflow runtime by running the following command:
