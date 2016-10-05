@@ -29,6 +29,7 @@ log.info "====================================="
 log.info "reads                  : ${params.reads}"
 log.info "genome                 : ${params.genome}"
 log.info "index                  : ${params.index}"
+log.info "phenotype info         : ${params.pheno}"               
 log.info "annotation             : ${params.annotation}"
 log.info "run index              : ${params.run_index}"
 log.info "output                 : ${params.output}"
@@ -40,7 +41,7 @@ log.info "\n"
 
 genome_file                   = file(params.genome)
 annotation_file               = file(params.annotation) 
-
+pheno_file                    = file(params.pheno)
 index_file                    = file(params.index)
 index_file1                   = index_file + ".1.ht2"
 index_name                    = index_file.getFileName()
@@ -165,11 +166,14 @@ process sam2bam {
     """
 }
 
+
+hisat2_bams.into { hisat2_bams1; hisat2_bams2 } 
+
 process stringtie_assemble_transcripts {
     tag "stringtie assemble transcripts: $name"
 
     input:
-    set val(name), file(bam) from hisat2_bams
+    set val(name), file(bam) from hisat2_bams1
     file annotation_file
 
     output:
@@ -209,7 +213,82 @@ process merge_stringtie_transcripts {
     //
     """
     stringtie --merge  -p ${task.cpus}  -G ${annotation_file} -o stringtie_merged.gtf  ${merge_list}
+    """
+}
+
+
+
+process transcript_abundance {
+    tag "reads: $name"
+
+    input:
+    set val(name), file(bam) from hisat2_bams2
+    file merged_transcript_file from merged_transcripts.first()
+
+    output:
+    file("${name}") into ballgown_data
+
+    script:
+    //
+    // Estimate abundances of merged transcripts in each sample
+    //
+    """
+    stringtie -e -B -p ${task.cpus} -G ${merged_transcript_file} -o ${name}/${name}_abundance.gtf ${bam}
 
     """
 }
+
+	
+process ballgown {
+    tag "ballgown"
+
+    input:
+    file pheno_file
+    file ballgown_dir from ballgown_data.toList()
+
+    output:
+    file("chrX_genes_results.csv") into sig_genes
+
+    shell:
+    //
+    // Merge all stringtie transcripts
+    //
+    '''
+    #!/usr/bin/env Rscript
+ 
+    pheno_data_file <- "!{pheno_file}"
+
+    library(ballgown)
+    library(RSkittleBrewer)
+    library(genefilter)
+    library(dplyr)
+    library(devtools)
+
+    pheno_data <- read.csv(pheno_data_file)
+
+    bg_chrX <- ballgown(dataDir = ".", samplePattern="ERR", pData=pheno_data)
+
+    bg_chrX_filt <- subset(bg_chrX, "rowVars(texpr(bg_chrX)) > 1", genomesubset=TRUE)
+
+    results_transcripts <-  stattest(bg_chrX_filt, feature='transcript', covariate='sex',
+                            adjustvars=c('population'), getFC=TRUE, meas='FPKM')
+
+    results_genes <-  stattest(bg_chrX_filt, feature='gene', covariate='sex',
+                      adjustvars=c('population'), getFC=TRUE, meas='FPKM')
+
+    results_transcripts <- data.frame(geneNames=ballgown::geneNames(bg_chrX_filt),
+                           geneIDs=ballgown::geneIDs(bg_chrX_filt), results_transcripts)
+
+    results_transcripts <- arrange(results_transcripts, pval)
+    results_genes <-  arrange(results_genes, pval)
+
+    write.csv(results_transcripts, "chrX_transcripts_results.csv", row.names=FALSE)
+    write.csv(results_genes, "chrX_genes_results.csv", row.names=FALSE)
+
+    subset(results_transcripts, results_transcripts$qval <=0.05)
+    subset(results_genes, results_genes$qval <=0.05)
+
+    '''
+}
+
 

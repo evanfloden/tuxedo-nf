@@ -36,9 +36,9 @@ RUN echo "deb http://cran.rstudio.com/bin/linux/debian jessie-cran3/" >>  /etc/a
  apt-get update --fix-missing && \
  apt-get -y install r-base
 
-RUN apt-get install libcurl4-openssl-dev libxml2-dev --yes
+RUN apt-get install libcurl4-openssl-dev libxml2-dev libssl-dev --yes
 
-RUN R -e 'source("http://bioconductor.org/biocLite.R"); library(BiocInstaller); biocLite("ballgown");'
+RUN R -e 'source("http://bioconductor.org/biocLite.R"); library(BiocInstaller); biocLite("ballgown"); install.packages("devtools", repos="https://cloud.r-project.org"); devtools::install_github("alyssafrazee/RSkittleBrewer"); biocLite("genefilter"); install.packages("dplyr", repos="https://cloud.r-project.org")'
 
 ## Install NCBI ngs, ncbi-vdb and sra-tools
 RUN apt-get install libmagic-dev libhdf5-dev git openjdk-7-jdk --yes
