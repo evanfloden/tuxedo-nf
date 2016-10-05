@@ -36,6 +36,17 @@ RUN echo "deb http://cran.rstudio.com/bin/linux/debian jessie-cran3/" >>  /etc/a
  apt-get update --fix-missing && \
  apt-get -y install r-base
 
+RUN apt-get install libcurl4-openssl-dev libxml2-dev --yes
+
 RUN R -e 'source("http://bioconductor.org/biocLite.R"); library(BiocInstaller); biocLite("ballgown");'
+
+## Install NCBI ngs, ncbi-vdb and sra-tools
+RUN apt-get install libmagic-dev libhdf5-dev git openjdk-7-jdk --yes
+RUN mkdir /opt/ncbi && \
+    cd /opt/ncbi && \
+    wget http://ftp-trace.ncbi.nlm.nih.gov/sra/sdk/2.7.0/sratoolkit.2.7.0-ubuntu64.tar.gz && \
+    tar zxf sratoolkit.2.7.0-ubuntu64.tar.gz && \
+     rm sratoolkit.2.7.0-ubuntu64.tar.gz
+ENV PATH /opt/ncbi/sratoolkit.2.7.0-ubuntu64/bin:$PATH
 
 

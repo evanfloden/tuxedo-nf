@@ -173,7 +173,7 @@ process stringtie_assemble_transcripts {
     file annotation_file
 
     output:
-    set val("${name}"), file("${name}.gtf") into hisat2_transcripts
+    file("${name}.gtf") into hisat2_transcripts
 
     script:
     //
@@ -186,4 +186,30 @@ process stringtie_assemble_transcripts {
     """
 }   
 
+
+hisat2_transcripts.into { hisat2_transcripts1; hisat2_transcripts2 }
+hisat2_transcripts1
+  .collectFile () { file ->  ['gtf_filenames.txt', file.name + '\n' ] }
+  .set { GTF_filenames }
+
+process merge_stringtie_transcripts {
+    tag "merge stringtie transcripts"
+
+    input:
+    file merge_list from GTF_filenames
+    file gtfs from hisat2_transcripts2.toList()
+    file annotation_file
+
+    output:
+    file("stringtie_merged.gtf") into merged_transcripts
+
+    script:
+    //
+    // Merge all stringtie transcripts
+    //
+    """
+    stringtie --merge  -p ${task.cpus}  -G ${annotation_file} -o stringtie_merged.gtf  ${merge_list}
+
+    """
+}
 
