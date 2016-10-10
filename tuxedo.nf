@@ -32,6 +32,8 @@ log.info "index                  : ${params.index}"
 log.info "phenotype info         : ${params.pheno}"               
 log.info "annotation             : ${params.annotation}"
 log.info "run index              : ${params.run_index}"
+log.info "use SRA                : ${params.use_sra}"
+log.info "SRA ids                : ${params.sra_ids}"
 log.info "output                 : ${params.output}"
 log.info "\n"
 
@@ -46,6 +48,7 @@ index_file                    = file(params.index)
 index_file1                   = index_file + ".1.ht2"
 index_name                    = index_file.getFileName()
 index_dir                     = index_file.getParent()
+sra_ids_list                  = params.sra_ids.tokenize(",") 
 
 /*
  * validate input files
@@ -62,6 +65,16 @@ Channel
     .fromFilePairs( params.reads, size: -1 , flat: true)
     .ifEmpty { error "Cannot find any reads matching: ${params.seqs}" }
     .set { read_files } 
+
+
+
+/*
+ * Create a channel for SRA IDs
+ */
+
+Channel
+    .from( sra_ids_list )
+    .set { sra_read_ids }
 
 
 /*
@@ -116,35 +129,58 @@ else {
     }
 }    
 
-process mapping {
-    tag "reads: $name"
 
-    input:
-    file index_dir from genome_index.first()
-    set val(name), file(reads) from read_files
 
-    output:
-    set val("${name}"), file("${name}.sam") into hisat2_sams 
+if (params.use_sra) {
+    process sra_mapping {
+        tag "sra reads: $sra_id"
 
-    script:
-    //
-    // HISAT2 mapper
-    //
-    def single = reads instanceof Path
-    if( single ) {
+        input:
+        file index_dir from genome_index.first()
+        val(sra_id) from sra_read_ids
+
+        output:
+        set val(sra_id), file("${sra_id}.sam") into hisat2_sams
+
+        script:
+        //
+        // HISAT2 mapper using NCBI SRA Tools
+        //
         """
-        hisat2 -x ${index_dir}/genome_index -U ${reads[0]} -S ${name}.sam 2> ${name}.alnstats
-
-        """
-    }  
-    else {
-        """
-        hisat2 -x ${index_dir}/genome_index -1 ${reads[0]} -2 ${reads[1]} -S ${name}.sam 2> ${name}.alnstats
+        hisat2 -x ${index_dir}/genome_index --sra-acc ${sra_id} -S ${sra_id}.sam
         """
     }
- 
-
 }
+else {
+    process mapping {
+        tag "reads: $name"
+
+        input:
+        file index_dir from genome_index.first()
+        set val(name), file(reads) from read_files
+
+        output:
+        set val(name), file("${name}.sam") into hisat2_sams
+
+        script:
+        //
+        // HISAT2 mapper
+        //
+        def single = reads instanceof Path
+        if( single ) {
+            """
+            hisat2 -x ${index_dir}/genome_index -U ${reads[0]} -S ${name}.sam
+
+            """
+        }
+        else {
+            """
+            hisat2 -x ${index_dir}/genome_index -1 ${reads[0]} -2 ${reads[1]} -S ${name}.sam
+            """
+        }
+    }
+}
+
 
 process sam2bam {
     tag "sam2bam: $name"
