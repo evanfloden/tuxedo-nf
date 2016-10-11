@@ -34,6 +34,7 @@ log.info "annotation             : ${params.annotation}"
 log.info "run index              : ${params.run_index}"
 log.info "use SRA                : ${params.use_sra}"
 log.info "SRA ids                : ${params.sra_ids}"
+log.info "NCBI cache             : ${params.ncbi_cache}"
 log.info "output                 : ${params.output}"
 log.info "\n"
 
@@ -49,6 +50,7 @@ index_file1                   = index_file + ".1.ht2"
 index_name                    = index_file.getFileName()
 index_dir                     = index_file.getParent()
 sra_ids_list                  = params.sra_ids.tokenize(",") 
+ncbi_cache                    = file(params.ncbi_cache)
 
 /*
  * validate input files
@@ -132,22 +134,48 @@ else {
 
 
 if (params.use_sra) {
+    process sra_prefetch {
+
+        publishDir = [path: {params.output}, mode: 'move', overwrite: 'true' ]
+        tag "sra_id: $sra_id"
+
+        input:
+        val(sra_id) from sra_read_ids
+
+        output:
+        file "ncbi/**" into sra_cache_elements
+        val (sra_id) into prefetched_sras
+
+        script:
+        //
+        // SRA Cache Check and Download
+        //
+        """
+        vdb-config --root -s /repository/user/main/public/root=\${PWD}/ncbi
+        prefetch -a "/home/sra_user/.aspera/connect/bin/ascp|/home/sra_user/.aspera/connect/etc/asperaweb_id_dsa.openssh" -t fasp ${sra_id}        
+        """
+    }
+}
+
+if (params.use_sra) {  
     process sra_mapping {
-        tag "sra reads: $sra_id"
+        tag "reads: $sra_id"
 
         input:
         file index_dir from genome_index.first()
-        val(sra_id) from sra_read_ids
+        val(sra_id) from prefetched_sras
 
         output:
         set val(sra_id), file("${sra_id}.sam") into hisat2_sams
 
         script:
         //
-        // HISAT2 mapper using NCBI SRA Tools
+        // HISAT2 mapper using SRAToolkit with ncbi-vdb support
         //
         """
-        hisat2 -x ${index_dir}/genome_index --sra-acc ${sra_id} -S ${sra_id}.sam
+        vdb-config --root -s /repository/user/main/public/root=\${PWD}/ncbi
+        fastq-dump --split-files ${sra_id}
+        hisat2 -x ${index_dir}/genome_index -1 ${sra_id}_1.fastq -2 ${sra_id}_2.fastq -S ${sra_id}.sam
         """
     }
 }
