@@ -55,9 +55,11 @@ ncbi_cache                    = file(params.ncbi_cache)
 /*
  * validate input files
  */
-if( !genome_file.exists() ) exit 1, "Missing genome file: ${genome_file}"
+if( !genome_file.exists() ) 
+	exit 1, "Missing genome file: ${genome_file}"
 
-if( !annotation_file.exists() ) exit 1, "Missing annotation file: ${annotation_file}"
+if( !annotation_file.exists() ) 
+	exit 1, "Missing annotation file: ${annotation_file}"
 
 /*
  * Create a channel for read files 
@@ -82,11 +84,8 @@ Channel
 /*
  * Check index files if required
  */
-if( !params.run_index ) {
-    if ( !index_file1.exists() ) {
-        exit 1, "Missing genome index file: ${index_file1}"
-    }
-}
+if( !params.run_index && !index_file1.exists() ) 
+	exit 1, "Missing genome index file: ${index_file1}"
      
 
 // GENOME INDEXING
@@ -136,7 +135,7 @@ else {
 if (params.use_sra) {
     process sra_prefetch {
 
-        publishDir = [path: {params.output}, mode: 'move', overwrite: 'true' ]
+        publishDir = params.output, mode: 'move', overwrite: 'true'
         tag "sra_id: $sra_id"
 
         input:
@@ -151,7 +150,7 @@ if (params.use_sra) {
         // SRA Cache Check and Download
         //
         """
-        vdb-config --root -s /repository/user/main/public/root=\${PWD}/ncbi
+        vdb-config --root -s /repository/user/main/public/root=\$PWD/ncbi
         prefetch -a "/home/sra_user/.aspera/connect/bin/ascp|/home/sra_user/.aspera/connect/etc/asperaweb_id_dsa.openssh" -t fasp ${sra_id}        
         """
     }
@@ -195,17 +194,14 @@ else {
         // HISAT2 mapper
         //
         def single = reads instanceof Path
-        if( single ) {
+        if( single ) 
             """
             hisat2 -x ${index_dir}/genome_index -U ${reads[0]} -S ${name}.sam
-
             """
-        }
-        else {
+        else 
             """
             hisat2 -x ${index_dir}/genome_index -1 ${reads[0]} -2 ${reads[1]} -S ${name}.sam
             """
-        }
     }
 }
 
@@ -217,16 +213,14 @@ process sam2bam {
     set val(name), file(sam) from hisat2_sams
 
     output:
-    set val("${name}"), file("${name}.bam") into hisat2_bams
+    set val(name), file("${name}.bam") into hisat2_bams
 
     script:
     //
     // SAM to sorted BAM files
     //
-    """
-    
+    """   
     samtools view -S -b ${sam} | samtools sort -o ${name}.bam -    
-
     """
 }
 
@@ -247,10 +241,8 @@ process stringtie_assemble_transcripts {
     //
     // Assemble Transcripts per sample
     //
-    """
-    
+    """   
     stringtie -p ${task.cpus} -G ${annotation_file} -o ${name}.gtf -l ${name} ${bam}
-
     """
 }   
 
@@ -298,7 +290,6 @@ process transcript_abundance {
     //
     """
     stringtie -e -B -p ${task.cpus} -G ${merged_transcript_file} -o ${name}/${name}_abundance.gtf ${bam}
-
     """
 }
 
