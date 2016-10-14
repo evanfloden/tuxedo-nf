@@ -130,7 +130,7 @@ if ( !params.use_sra ) {
         .fromFilePairs( params.reads, size: -1 , flat: true)
         .ifEmpty { error "Cannot find any reads matching: ${params.seqs}" and use_sra is false}
         .set { read_files } 
-
+}
 
 /*
  * Create a channel for SRA IDs
