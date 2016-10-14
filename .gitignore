@@ -1,4 +1,5 @@
-ncbi/
+ncbi
+cache/*
 trace.*
 .nextflow*
 work/*

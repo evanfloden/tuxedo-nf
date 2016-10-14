@@ -31,10 +31,12 @@ log.info "genome                 : ${params.genome}"
 log.info "index                  : ${params.index}"
 log.info "phenotype info         : ${params.pheno}"               
 log.info "annotation             : ${params.annotation}"
+log.info "download genome        : ${params.download_genome}"
+log.info "download annotation    : ${params.download_annotation}"
 log.info "run index              : ${params.run_index}"
 log.info "use SRA                : ${params.use_sra}"
 log.info "SRA ids                : ${params.sra_ids}"
-log.info "NCBI cache             : ${params.ncbi_cache}"
+log.info "inputs cache           : ${params.cache}"
 log.info "output                 : ${params.output}"
 log.info "\n"
 
@@ -50,16 +52,74 @@ index_file1                   = index_file + ".1.ht2"
 index_name                    = index_file.getFileName()
 index_dir                     = index_file.getParent()
 sra_ids_list                  = params.sra_ids.tokenize(",") 
-ncbi_cache                    = file(params.ncbi_cache)
+cache                         = file(params.cache)
 
 /*
- * validate input files
+ * validate and create a channel for genome/index input files
  */
-if( !genome_file.exists() ) 
+
+if( !params.download_genome && !genome_file.exists() && params.run_index && !index_file1.exists() ) 
 	exit 1, "Missing genome file: ${genome_file}"
 
-if( !annotation_file.exists() ) 
+if( !params.download_genome && !index_file1.exists() && !params.run_index) 
+        exit 1, "Missing index file: ${index_file}"
+
+if( params.download_genome ) {
+    process download_genome {
+
+            input:
+            val (params.genome_address)
+
+            output:
+            file "*.fa" into genomes
+
+            script:
+            //
+            // Genome Download
+            //
+            """
+            wget ${params.genome_address}
+            gunzip -d *.gz
+            """
+    }
+} else { 
+    Channel 
+        .fromPath { genome_file}
+        .set { genomes }
+}
+
+
+/*
+ * validate and create a channel for annotation input files
+ */
+
+if( !params.download_annotation && !annotation_file.exists() ) 
 	exit 1, "Missing annotation file: ${annotation_file}"
+
+if( params.download_annotation ) {
+  process download_annotation {
+
+            input:
+            val (params.annotation_address)
+
+            output:
+            file "*.gtf" into annotations
+
+            script:
+            //
+            // Annotation Download
+            //
+            """
+            wget ${params.annotation_address}
+            gunzip -d *.gz
+            """
+    }
+} else {    
+    Channel    
+        .fromPath { annotation_file}
+        .set { annotations }
+}
+
 
 /*
  * Create a channel for read files 
@@ -71,7 +131,6 @@ Channel
     .set { read_files } 
 
 
-
 /*
  * Create a channel for SRA IDs
  */
@@ -80,13 +139,14 @@ Channel
     .from( sra_ids_list )
     .set { sra_read_ids }
 
-
 /*
  * Check index files if required
  */
+
 if( !params.run_index && !index_file1.exists() ) 
 	exit 1, "Missing genome index file: ${index_file1}"
      
+
 
 // GENOME INDEXING
 // ===============
@@ -94,7 +154,7 @@ if( !params.run_index && !index_file1.exists() )
 if (params.run_index) {
     process genome_index {
         input:
-        file genome_file
+        file genome_file from genomes
 
         output:
         file "index_dir" into genome_index
@@ -135,7 +195,7 @@ else {
 if (params.use_sra) {
     process sra_prefetch {
 
-        publishDir = params.output, mode: 'move', overwrite: 'true'
+        publishDir = [path: {params.cache}, mode: 'copy', overwrite: 'true' ]
         tag "sra_id: $sra_id"
 
         input:
