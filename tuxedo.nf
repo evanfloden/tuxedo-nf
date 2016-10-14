@@ -307,6 +307,11 @@ process stringtie_assemble_transcripts {
 
 
 hisat2_transcripts.into { hisat2_transcripts1; hisat2_transcripts2 }
+
+hisat2_transcripts2
+    .toList()
+    .set { grouped_transcripts }
+
 hisat2_transcripts1
   .collectFile () { file ->  ['gtf_filenames.txt', file.name + '\n' ] }
   .set { GTF_filenames }
@@ -315,9 +320,9 @@ process merge_stringtie_transcripts {
     tag "merge stringtie transcripts"
 
     input:
-    file merge_list from GTF_filenames
-    file gtfs from hisat2_transcripts2.toList()
-    file (annotation_file) from annotations2
+    file (merge_list) from GTF_filenames.first()
+    file (gtfs) from grouped_transcripts
+    file (annotation_file) from annotations2.first()
 
     output:
     file("stringtie_merged.gtf") into merged_transcripts
