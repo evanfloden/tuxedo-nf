@@ -36,7 +36,7 @@ log.info "download annotation    : ${params.download_annotation}"
 log.info "run index              : ${params.run_index}"
 log.info "use SRA                : ${params.use_sra}"
 log.info "SRA ids                : ${params.sra_ids}"
-log.info "inputs cache           : ${params.cache}"
+log.info "NCBI reads cache       : ${params.cache}"
 log.info "output                 : ${params.output}"
 log.info "\n"
 
@@ -124,11 +124,12 @@ if( params.download_annotation ) {
 /*
  * Create a channel for read files 
  */
- 
-Channel
-    .fromFilePairs( params.reads, size: -1 , flat: true)
-    .ifEmpty { error "Cannot find any reads matching: ${params.seqs}" }
-    .set { read_files } 
+
+( if !params.use_sra ) {
+    Channel
+        .fromFilePairs( params.reads, size: -1 , flat: true)
+        .ifEmpty { error "Cannot find any reads matching: ${params.seqs}" and use_sra is false}
+        .set { read_files } 
 
 
 /*
