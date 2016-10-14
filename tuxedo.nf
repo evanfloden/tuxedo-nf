@@ -320,9 +320,9 @@ process merge_stringtie_transcripts {
     tag "merge stringtie transcripts"
 
     input:
-    file (merge_list) from GTF_filenames.first()
+    file (merge_list) from GTF_filenames
     file (gtfs) from grouped_transcripts
-    file (annotation_file) from annotations2.first()
+    file (annotation_file) from annotations2
 
     output:
     file("stringtie_merged.gtf") into merged_transcripts
