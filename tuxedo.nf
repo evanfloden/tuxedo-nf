@@ -291,7 +291,7 @@ process stringtie_assemble_transcripts {
 
     input:
     set val(name), file(bam) from hisat2_bams1
-    file annotation_file
+    file annotation_file from annotations
 
     output:
     file("${name}.gtf") into hisat2_transcripts
@@ -317,7 +317,7 @@ process merge_stringtie_transcripts {
     input:
     file merge_list from GTF_filenames
     file gtfs from hisat2_transcripts2.toList()
-    file annotation_file
+    file annotation_file from annoatations
 
     output:
     file("stringtie_merged.gtf") into merged_transcripts
