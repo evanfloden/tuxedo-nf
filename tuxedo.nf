@@ -211,7 +211,6 @@ if (params.use_sra) {
         // SRA Cache Check and Download
         //
         """
-        vdb-config --root -s /repository/user/main/public/root=\$PWD/ncbi
         prefetch -a "/home/sra_user/.aspera/connect/bin/ascp|/home/sra_user/.aspera/connect/etc/asperaweb_id_dsa.openssh" -t fasp ${sra_id}        
         """
     }
@@ -233,7 +232,6 @@ if (params.use_sra) {
         // HISAT2 mapper using SRAToolkit with ncbi-vdb support
         //
         """
-        vdb-config --root -s /repository/user/main/public/root=\${PWD}/ncbi
         fastq-dump --split-files ${sra_id}
         hisat2 -x ${index_dir}/genome_index -1 ${sra_id}_1.fastq -2 ${sra_id}_2.fastq -S ${sra_id}.sam
         """
