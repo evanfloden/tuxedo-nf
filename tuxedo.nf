@@ -203,7 +203,7 @@ if (params.use_sra) {
         val(sra_id) from sra_read_ids
 
         output:
-        file "ncbi/**" into sra_cache_elements
+        file "ncbi/**" optional true into sra_cache_elements
         val (sra_id) into prefetched_sras
 
         script:
