@@ -103,7 +103,7 @@ if( params.download_annotation ) {
             val (params.annotation_address)
 
             output:
-            file "*.gtf" into annotations
+            file "*.gtf" into annotations1, annotations2
 
             script:
             //
@@ -117,7 +117,7 @@ if( params.download_annotation ) {
 } else {    
     Channel    
         .fromPath { annotation_file}
-        .set { annotations }
+        .set { annotations1; annotations2 }
 }
 
 
@@ -291,7 +291,7 @@ process stringtie_assemble_transcripts {
 
     input:
     set val(name), file(bam) from hisat2_bams1
-    file (annotation_file) from annotations
+    file (annotation_file) from annotations1
 
     output:
     file("${name}.gtf") into hisat2_transcripts
@@ -317,7 +317,7 @@ process merge_stringtie_transcripts {
     input:
     file merge_list from GTF_filenames
     file gtfs from hisat2_transcripts2.toList()
-    file (annotation_file) from annotations
+    file (annotation_file) from annotations2
 
     output:
     file("stringtie_merged.gtf") into merged_transcripts
