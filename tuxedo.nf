@@ -125,7 +125,7 @@ if( params.download_annotation ) {
  * Create a channel for read files 
  */
 
-( if !params.use_sra ) {
+if ( !params.use_sra ) {
     Channel
         .fromFilePairs( params.reads, size: -1 , flat: true)
         .ifEmpty { error "Cannot find any reads matching: ${params.seqs}" and use_sra is false}
