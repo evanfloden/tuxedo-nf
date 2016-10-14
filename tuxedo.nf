@@ -317,7 +317,7 @@ process merge_stringtie_transcripts {
     input:
     file merge_list from GTF_filenames
     file gtfs from hisat2_transcripts2.toList()
-    file annotation_file from annoatations
+    file annotation_file from annotations
 
     output:
     file("stringtie_merged.gtf") into merged_transcripts
