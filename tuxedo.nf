@@ -103,7 +103,7 @@ if( params.download_annotation ) {
             val (params.annotation_address)
 
             output:
-            file "*.gtf" into annotations1, annotations2, annotation3
+            file "*.gtf" into annotations1, annotations2, annotations3
 
             script:
             //
