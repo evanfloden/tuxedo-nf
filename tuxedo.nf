@@ -117,7 +117,7 @@ if( params.download_annotation ) {
 } else {    
     Channel    
         .fromPath { annotation_file}
-        .set { annotations1; annotations2 }
+        .set { annotations1; annotations2; annotations3 }
 }
 
 
@@ -337,13 +337,15 @@ process merge_stringtie_transcripts {
 }
 
 
+merged_transcripts.into { merged_transcripts1; merged_transcripts2 }
+
 
 process transcript_abundance {
     tag "reads: $name"
 
     input:
     set val(name), file(bam) from hisat2_bams2
-    file merged_transcript_file from merged_transcripts.first()
+    file merged_transcript_file from merged_transcripts1.first()
 
     output:
     file("${name}") into ballgown_data
@@ -357,7 +359,28 @@ process transcript_abundance {
     """
 }
 
-	
+process gffcompare {
+    tag "gffcompare"
+    
+    input:
+    file (annotation_file) from annotations3
+    file (merged_transcripts) from merged_transcripts2
+
+    output:
+    file("merged_gffcompare") into gffcompare
+
+    shell:
+    //
+    // Compare merged stringtie transcripts with annotation
+    //
+    '''
+    gffcompare –r ${annotation_file} –G –o merged ${merged_transcripts}
+    mkdir merged_gffcompare
+    mv merged* merged_gffcompare/.
+    '''
+}	
+
+
 process ballgown {
     tag "ballgown"
 
@@ -385,24 +408,63 @@ process ballgown {
 
     pheno_data <- read.csv(pheno_data_file)
 
-    bg_chrX <- ballgown(dataDir = ".", samplePattern="ERR", pData=pheno_data)
+    bg <- ballgown(dataDir = ".", samplePattern="ERR", pData=pheno_data)
 
-    bg_chrX_filt <- subset(bg_chrX, "rowVars(texpr(bg_chrX)) > 1", genomesubset=TRUE)
+    bg <- subset(bg, "rowVars(texpr(bg)) > 1", genomesubset=TRUE)
 
-    results_transcripts <-  stattest(bg_chrX_filt, feature='transcript', covariate='sex',
+    results_transcripts <-  stattest(bg_filt, feature='transcript', covariate='sex',
                             adjustvars=c('population'), getFC=TRUE, meas='FPKM')
 
-    results_genes <-  stattest(bg_chrX_filt, feature='gene', covariate='sex',
+    results_genes <-  stattest(bg_filt, feature='gene', covariate='sex',
                       adjustvars=c('population'), getFC=TRUE, meas='FPKM')
 
-    results_transcripts <- data.frame(geneNames=ballgown::geneNames(bg_chrX_filt),
-                           geneIDs=ballgown::geneIDs(bg_chrX_filt), results_transcripts)
+    results_transcripts <- data.frame(geneName=ballgown::geneNames(bg_filt),
+                           geneID=ballgown::geneIDs(bg_filt), results_transcripts)
 
     results_transcripts <- arrange(results_transcripts, pval)
     results_genes <-  arrange(results_genes, pval)
 
+
     write.csv(results_transcripts, "chrX_transcripts_results.csv", row.names=FALSE)
     write.csv(results_genes, "chrX_genes_results.csv", row.names=FALSE)
+
+    subset(results_transcripts,results_transcripts$qval<0.05)
+    subset(results_genes,results_genes$qval<0.05) 
+
+    tropical= c('darkorange', 'dodgerblue', 'hotpink', 'limegreen', 'yellow')
+    palette(tropical)
+
+     fpkm = texpr(bg,meas="FPKM")
+     fpkm = log2(fpkm+1)
+
+     png('Fig3.png') 
+     boxplot(fpkm,col=as.numeric(pheno_data$sex), las=2, ylab='log2(FPKM+1)')
+     dev.off()
+
+     # Find the transcript ID for "GTPBP6" [12] in protocol 
+     row <- subset( results_transcripts, geneName == 'GTPBP6')
+     transcriptID <- row$id
+
+     ballgown::transcriptNames(bg)[transcriptID]
+     ballgown::geneNames(bg)[transcriptID]
+
+     png('Fig4.png')
+     plot(fpkm[transcriptID,] ~ pheno_data$sex, border=c(1,2),
+         main=paste(ballgown::geneNames(bg)[transcriptID],' : ',
+         ballgown::transcriptNames(bg)[transcriptID]),pch=19, xlab="Sex", 
+         ylab='log2(FPKM+1)')
+     points(fpkm[12,] ~ jitter(as.numeric(pheno_data$sex)),
+         col=as.numeric(pheno_data$sex))
+     dev.off()
+    
+     # Find the transcipt ID for XIST
+     row <- subset( results_transcripts, geneName == 'XIST')
+     transcriptID <- row$id
+ 
+     png('Fig5.png') 
+     plotTranscripts(ballgown::geneIDs(bg)[transcriptID], bg, 
+         main=c('Gene XIST in sample ERR188234'), sample=c('ERR188234')) 
+     dev.off()   
 
     '''
 }
