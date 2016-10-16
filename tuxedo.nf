@@ -389,7 +389,10 @@ process ballgown {
     file ballgown_dir from ballgown_data.toList()
 
     output:
-    file("chrX_genes_results.csv") into sig_genes
+    file("genes_results.csv") into sig_genes
+    file("transcript_results.csv") into sig_transcripts
+    file("Fig*.png") into figures
+
 
     shell:
     //
@@ -425,8 +428,8 @@ process ballgown {
     results_genes <-  arrange(results_genes, pval)
 
 
-    write.csv(results_transcripts, "chrX_transcripts_results.csv", row.names=FALSE)
-    write.csv(results_genes, "chrX_genes_results.csv", row.names=FALSE)
+    write.csv(results_transcripts, "transcripts_results.csv", row.names=FALSE)
+    write.csv(results_genes, "genes_results.csv", row.names=FALSE)
 
     subset(results_transcripts,results_transcripts$qval<0.05)
     subset(results_genes,results_genes$qval<0.05) 
