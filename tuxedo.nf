@@ -374,7 +374,7 @@ process gffcompare {
     // Compare merged stringtie transcripts with annotation
     //
     """
-    gffcompare –r ${annotation_file} –G –o merged ${merged_transcripts}
+    gffcompare -r ${annotation_file} -G -o merged ${merged_transcripts}
     mkdir merged_gffcompare
     mv merged* merged_gffcompare/.
     """
