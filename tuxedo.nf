@@ -413,7 +413,7 @@ process ballgown {
 
     bg <- ballgown(dataDir = ".", samplePattern="ERR", pData=pheno_data)
 
-    bg <- subset(bg, "rowVars(texpr(bg)) > 1", genomesubset=TRUE)
+    bg_filt <- subset(bg, "rowVars(texpr(bg)) > 1", genomesubset=TRUE)
 
     results_transcripts <-  stattest(bg_filt, feature='transcript', covariate='sex',
                             adjustvars=c('population'), getFC=TRUE, meas='FPKM')
@@ -437,37 +437,37 @@ process ballgown {
     tropical= c('darkorange', 'dodgerblue', 'hotpink', 'limegreen', 'yellow')
     palette(tropical)
 
-     fpkm = texpr(bg,meas="FPKM")
-     fpkm = log2(fpkm+1)
+    fpkm = texpr(bg,meas="FPKM")
+    fpkm = log2(fpkm+1)
 
-     png('Fig3.png') 
-     boxplot(fpkm,col=as.numeric(pheno_data$sex), las=2, ylab='log2(FPKM+1)')
-     dev.off()
+    png('Fig3.png') 
+    boxplot(fpkm,col=as.numeric(pheno_data$sex), las=2, ylab='log2(FPKM+1)')
+    dev.off()
 
-     # Find the transcript ID for "GTPBP6" [12] in protocol 
-     row <- subset( results_transcripts, geneName == 'GTPBP6')
-     transcriptID <- row$id
+    # Find the transcript ID for "GTPBP6" [12] in protocol 
+    row <- subset( results_transcripts, geneName == 'GTPBP6')
+    transcriptID <- row$id
 
-     ballgown::transcriptNames(bg)[transcriptID]
-     ballgown::geneNames(bg)[transcriptID]
+    ballgown::transcriptNames(bg)[transcriptID]
+    ballgown::geneNames(bg)[transcriptID]
 
-     png('Fig4.png')
-     plot(fpkm[transcriptID,] ~ pheno_data$sex, border=c(1,2),
-         main=paste(ballgown::geneNames(bg)[transcriptID],' : ',
-         ballgown::transcriptNames(bg)[transcriptID]),pch=19, xlab="Sex", 
-         ylab='log2(FPKM+1)')
-     points(fpkm[12,] ~ jitter(as.numeric(pheno_data$sex)),
-         col=as.numeric(pheno_data$sex))
-     dev.off()
+    png('Fig4.png')
+    plot(fpkm[transcriptID,] ~ pheno_data$sex, border=c(1,2),
+        main=paste(ballgown::geneNames(bg)[transcriptID],' : ',
+        ballgown::transcriptNames(bg)[transcriptID]),pch=19, xlab="Sex", 
+        ylab='log2(FPKM+1)')
+    points(fpkm[12,] ~ jitter(as.numeric(pheno_data$sex)),
+        col=as.numeric(pheno_data$sex))
+    dev.off()
     
-     # Find the transcipt ID for XIST
-     row <- subset( results_transcripts, geneName == 'XIST')
-     transcriptID <- row$id
+    # Find the transcipt ID for XIST
+    row <- subset( results_transcripts, geneName == 'XIST')
+    transcriptID <- row$id
  
-     png('Fig5.png') 
-     plotTranscripts(ballgown::geneIDs(bg)[transcriptID], bg, 
-         main=c('Gene XIST in sample ERR188234'), sample=c('ERR188234')) 
-     dev.off()   
+    png('Fig5.png') 
+    plotTranscripts(ballgown::geneIDs(bg)[transcriptID], bg, 
+        main=c('Gene XIST in sample ERR188234'), sample=c('ERR188234')) 
+    dev.off()   
 
     '''
 }
