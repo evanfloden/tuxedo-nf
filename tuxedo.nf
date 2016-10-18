@@ -459,7 +459,7 @@ process ballgown {
     ballgown::geneNames(bg)[GTPBP6_id]
 
     png('Fig4.png')
-    plot(fpkm[transcriptID,] ~ pheno_data$sex, border=c(1,2),
+    plot(fpkm[GTPBP6_id,] ~ pheno_data$sex, border=c(1,2),
         main=paste(ballgown::geneNames(bg)[GTPBP6_id],' : ',
         ballgown::transcriptNames(bg)[GTPBP6_id]),pch=19, xlab="Sex", 
         ylab='log2(FPKM+1)')
