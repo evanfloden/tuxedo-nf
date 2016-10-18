@@ -33,6 +33,7 @@ log.info "phenotype info         : ${params.pheno}"
 log.info "annotation             : ${params.annotation}"
 log.info "download genome        : ${params.download_genome}"
 log.info "download annotation    : ${params.download_annotation}"
+log.info "UCSC annotation        : ${params.UCSC_annotation}"
 log.info "run index              : ${params.run_index}"
 log.info "use SRA                : ${params.use_sra}"
 log.info "SRA ids                : ${params.sra_ids}"
@@ -46,6 +47,7 @@ log.info "\n"
 
 genome_file                   = file(params.genome)
 annotation_file               = file(params.annotation) 
+UCSC_annotation               = params.UCSC_annotation.toString().toUpperCase()
 pheno_file                    = file(params.pheno)
 index_file                    = file(params.index)
 index_file1                   = index_file + ".1.ht2"
@@ -53,6 +55,7 @@ index_name                    = index_file.getFileName()
 index_dir                     = index_file.getParent()
 sra_ids_list                  = params.sra_ids.tokenize(",") 
 cache                         = file(params.cache)
+
 
 /*
  * validate and create a channel for genome/index input files
@@ -103,7 +106,7 @@ if( params.download_annotation ) {
             val (params.annotation_address)
 
             output:
-            file "*.gtf" into annotations1, annotations2, annotations3
+            file "*.gtf" into annotations1, annotations2, annotations3; annotations4
 
             script:
             //
@@ -117,7 +120,7 @@ if( params.download_annotation ) {
 } else {    
     Channel    
         .fromPath { annotation_file}
-        .set { annotations1; annotations2; annotations3 }
+        .set { annotatiftp://ftp.ensembl.org/pub/release-86/gtf/homo_sapiens/Homo_sapiens.GRCh38.86.gtf.gzons1; annotations2; annotations3; annotations4}
 }
 
 
@@ -336,9 +339,7 @@ process merge_stringtie_transcripts {
     """
 }
 
-
 merged_transcripts.into { merged_transcripts1; merged_transcripts2 }
-
 
 process transcript_abundance {
     tag "reads: $name"
@@ -386,6 +387,7 @@ process ballgown {
 
     input:
     file pheno_file
+    file annotation from annotations4
     file ballgown_dir from ballgown_data.toList()
 
     output:
@@ -413,6 +415,12 @@ process ballgown {
 
     bg <- ballgown(dataDir = ".", samplePattern="ERR", pData=pheno_data)
 
+    # Get Gene Symbols of Transcripts 
+    gene_symbols <- getGenes("!{annotation}", structure(bg)$trans, UCSC=!{UCSC_annotation}, attribute="gene_name")
+    vector1 <- sapply(gene_symbols, function(x){as.vector(x)})
+    gene_symbols_vector <- sapply(vector1, function(x){toString(x)})
+    expr(bg)$trans$gene_name = gene_symbols_vector
+
     bg_filt <- subset(bg, "rowVars(texpr(bg)) > 1", genomesubset=TRUE)
 
     results_transcripts <-  stattest(bg_filt, feature='transcript', covariate='sex',
@@ -426,7 +434,6 @@ process ballgown {
 
     results_transcripts <- arrange(results_transcripts, pval)
     results_genes <-  arrange(results_genes, pval)
-
 
     write.csv(results_transcripts, "transcripts_results.csv", row.names=FALSE)
     write.csv(results_genes, "genes_results.csv", row.names=FALSE)
