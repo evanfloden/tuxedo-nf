@@ -392,7 +392,7 @@ process ballgown {
 
     output:
     file("genes_results.csv") into sig_genes
-    file("transcript_results.csv") into sig_transcripts
+    file("transcripts_results.csv") into sig_transcripts
     file("Fig*.png") into figures
 
 
@@ -451,28 +451,28 @@ process ballgown {
     boxplot(fpkm,col=as.numeric(pheno_data$sex), las=2, ylab='log2(FPKM+1)')
     dev.off()
 
-    # Find the transcript ID for "GTPBP6" [12] in protocol 
-    row <- subset( results_transcripts, geneName == 'GTPBP6')
-    transcriptID <- row$id
+    # Get the transcript ID for "GTPBP6" [12] in protocol 
+    GTPBP6 <- subset(results_transcripts,geneName=='GTPBP6',select=id)
+    GTPBP6_id <- as.numeric(as.character(GTPBP6$id)
 
-    ballgown::transcriptNames(bg)[transcriptID]
-    ballgown::geneNames(bg)[transcriptID]
+    ballgown::transcriptNames(bg)[GTPBP6_id]
+    ballgown::geneNames(bg)[GTPBP6_id]
 
     png('Fig4.png')
     plot(fpkm[transcriptID,] ~ pheno_data$sex, border=c(1,2),
-        main=paste(ballgown::geneNames(bg)[transcriptID],' : ',
-        ballgown::transcriptNames(bg)[transcriptID]),pch=19, xlab="Sex", 
+        main=paste(ballgown::geneNames(bg)[GTPBP6_id],' : ',
+        ballgown::transcriptNames(bg)[GTPBP6_id]),pch=19, xlab="Sex", 
         ylab='log2(FPKM+1)')
     points(fpkm[12,] ~ jitter(as.numeric(pheno_data$sex)),
         col=as.numeric(pheno_data$sex))
     dev.off()
     
     # Find the transcipt ID for XIST
-    row <- subset( results_transcripts, geneName == 'XIST')
-    transcriptID <- row$id
+    XIST_num <- grep("XIST", results_transcripts$geneName)[1]
+    XIST_id <-  as.numeric(as.character(results_transcripts[11,]$id))
  
     png('Fig5.png') 
-    plotTranscripts(ballgown::geneIDs(bg)[transcriptID], bg, 
+    plotTranscripts(ballgown::geneIDs(bg)[XIST_id], bg, 
         main=c('Gene XIST in sample ERR188234'), sample=c('ERR188234')) 
     dev.off()   
 
