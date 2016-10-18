@@ -106,7 +106,7 @@ if( params.download_annotation ) {
             val (params.annotation_address)
 
             output:
-            file "*.gtf" into annotations1, annotations2, annotations3; annotations4
+            file "*.gtf" into annotations1, annotations2, annotations3, annotations4
 
             script:
             //
@@ -120,7 +120,7 @@ if( params.download_annotation ) {
 } else {    
     Channel    
         .fromPath { annotation_file}
-        .set { annotatiftp://ftp.ensembl.org/pub/release-86/gtf/homo_sapiens/Homo_sapiens.GRCh38.86.gtf.gzons1; annotations2; annotations3; annotations4}
+        .set { annotations1; annotations2; annotations3; annotations4}
 }
 
 
