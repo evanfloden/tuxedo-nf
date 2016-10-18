@@ -453,7 +453,7 @@ process ballgown {
 
     # Get the transcript ID for "GTPBP6" [12] in protocol 
     GTPBP6 <- subset(results_transcripts,geneName=='GTPBP6',select=id)
-    GTPBP6_id <- as.numeric(as.character(GTPBP6$id)
+    GTPBP6_id <- as.numeric(as.character(GTPBP6$id))
 
     ballgown::transcriptNames(bg)[GTPBP6_id]
     ballgown::geneNames(bg)[GTPBP6_id]
