@@ -83,3 +83,10 @@ RUN mkdir /ncbi_site && mkdir /ncbi_local && \
     echo '/repository/site/main/public/apps/wgs/volumes/wgsFlat = "wgs"' >> /root/.ncbi/user-settings.mkfg && \
     vdb-config --root -s /repository/site/main/public/root=/ncbi_site
 
+RUN wget http://ccb.jhu.edu/software/stringtie/dl/gffcompare-0.9.8.tar.gz -O /opt/gffcompare-0.9.8.tar.gz && \
+    cd /opt/ && \
+    tar zxf /opt/gffcompare-0.9.8.tar.gz && \
+    cd gffcompare-0.9.8 && \
+    make && \
+    chmod +x gffcompare
+ENV PATH /opt/gffcompare-0.9.8:$PATH

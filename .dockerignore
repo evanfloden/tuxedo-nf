@@ -1,4 +1,6 @@
-ncbi
-example-data
-work
-results
+.git/*
+cache/*
+ncbi/*
+example-data/*
+work/*
+results/*

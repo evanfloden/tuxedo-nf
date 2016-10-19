@@ -45,8 +45,8 @@ log.info "\n"
  * Input parameters validation
  */
 
+annotation_file               = file(params.annotation)
 genome_file                   = file(params.genome)
-annotation_file               = file(params.annotation) 
 UCSC_annotation               = params.UCSC_annotation.toString().toUpperCase()
 pheno_file                    = file(params.pheno)
 index_file                    = file(params.index)
@@ -96,9 +96,6 @@ if( params.download_genome ) {
  * validate and create a channel for annotation input files
  */
 
-if( !params.download_annotation && !annotation_file.exists() ) 
-	exit 1, "Missing annotation file: ${annotation_file}"
-
 if( params.download_annotation ) {
   process download_annotation {
 
@@ -119,8 +116,8 @@ if( params.download_annotation ) {
     }
 } else {    
     Channel    
-        .fromPath { annotation_file}
-        .set { annotations1; annotations2; annotations3; annotations4}
+        .fromPath ( annotation_file )
+        .into { annotations1; annotations2; annotations3; annotations4}
 }
 
 
@@ -143,14 +140,6 @@ Channel
     .from( sra_ids_list )
     .set { sra_read_ids }
 
-/*
- * Check index files if required
- */
-
-if( !params.run_index && !index_file1.exists() ) 
-	exit 1, "Missing genome index file: ${index_file1}"
-     
-
 
 // GENOME INDEXING
 // ===============
@@ -161,7 +150,7 @@ if (params.run_index) {
         file genome_file from genomes
 
         output:
-        file "index_dir" into genome_index
+        set val ("genome_index"), file("index_dir") into genome_index
 
         script:
         //
@@ -177,11 +166,11 @@ if (params.run_index) {
 else {
     process premade_index {
         input:
-        file index_dir
-        val index_name
+        file(index_dir)
+        val(index_name)
 
         output:
-        file "index_dir" into genome_index
+        set val(index_name), file("index_dir") into genome_index
 
         script:
         //
@@ -224,7 +213,7 @@ if (params.use_sra) {
         tag "reads: $sra_id"
 
         input:
-        file index_dir from genome_index.first()
+        set val (index_name), file(index_dir) from genome_index.first()
         val(sra_id) from prefetched_sras
 
         output:
@@ -236,7 +225,7 @@ if (params.use_sra) {
         //
         """
         fastq-dump --split-files ${sra_id}
-        hisat2 -x ${index_dir}/genome_index -1 ${sra_id}_1.fastq -2 ${sra_id}_2.fastq -S ${sra_id}.sam
+        hisat2 -x ${index_dir}/${index_name} -1 ${sra_id}_1.fastq -2 ${sra_id}_2.fastq -S ${sra_id}.sam
         """
     }
 }
@@ -245,7 +234,7 @@ else {
         tag "reads: $name"
 
         input:
-        file index_dir from genome_index.first()
+        set val(index_name), file(index_dir) from genome_index.first()
         set val(name), file(reads) from read_files
 
         output:
@@ -258,11 +247,11 @@ else {
         def single = reads instanceof Path
         if( single ) 
             """
-            hisat2 -x ${index_dir}/genome_index -U ${reads[0]} -S ${name}.sam
+            hisat2 -x ${index_dir}/${index_name} -U ${reads[0]} -S ${name}.sam
             """
         else 
             """
-            hisat2 -x ${index_dir}/genome_index -1 ${reads[0]} -2 ${reads[1]} -S ${name}.sam
+            hisat2 -x ${index_dir}/${index_name} -1 ${reads[0]} -2 ${reads[1]} -S ${name}.sam
             """
     }
 }
@@ -294,7 +283,7 @@ process stringtie_assemble_transcripts {
 
     input:
     set val(name), file(bam) from hisat2_bams1
-    file (annotation_file) from annotations1.first()
+    file (annotation_f) from annotations1.first()
 
     output:
     file("${name}.gtf") into hisat2_transcripts
@@ -304,7 +293,7 @@ process stringtie_assemble_transcripts {
     // Assemble Transcripts per sample
     //
     """   
-    stringtie -p ${task.cpus} -G ${annotation_file} -o ${name}.gtf -l ${name} ${bam}
+    stringtie -p ${task.cpus} -G ${annotation_f} -o ${name}.gtf -l ${name} ${bam}
     """
 }   
 
@@ -325,7 +314,7 @@ process merge_stringtie_transcripts {
     input:
     file (merge_list) from GTF_filenames
     file (gtfs) from grouped_transcripts
-    file (annotation_file) from annotations2
+    file (annotation_f) from annotations2
 
     output:
     file("stringtie_merged.gtf") into merged_transcripts
@@ -335,7 +324,7 @@ process merge_stringtie_transcripts {
     // Merge all stringtie transcripts
     //
     """
-    stringtie --merge  -p ${task.cpus}  -G ${annotation_file} -o stringtie_merged.gtf  ${merge_list}
+    stringtie --merge  -p ${task.cpus}  -G ${annotation_f} -o stringtie_merged.gtf  ${merge_list}
     """
 }
 
@@ -364,7 +353,7 @@ process gffcompare {
     tag "gffcompare"
     
     input:
-    file (annotation_file) from annotations3
+    file (annotation_f) from annotations3
     file (merged_transcripts) from merged_transcripts2
 
     output:
@@ -375,7 +364,7 @@ process gffcompare {
     // Compare merged stringtie transcripts with annotation
     //
     """
-    gffcompare -r ${annotation_file} -G -o compare_merged ${merged_transcripts}
+    gffcompare -r ${annotation_f} -G -o compare_merged ${merged_transcripts}
     mkdir merged_gffcompare
     mv compare_merged* merged_gffcompare/.
     """
@@ -387,13 +376,12 @@ process ballgown {
 
     input:
     file pheno_file
-    file annotation from annotations4
+    file annotation_f from annotations4
     file ballgown_dir from ballgown_data.toList()
 
     output:
     file("genes_results.csv") into sig_genes
     file("transcripts_results.csv") into sig_transcripts
-    file("Fig*.png") into figures
 
 
     shell:
@@ -411,70 +399,30 @@ process ballgown {
     library(dplyr)
     library(devtools)
 
-    pheno_data <- read.csv(pheno_data_file)
+    pheno_data <- read.table(pheno_data_file, header=TRUE, colClasses = c("factor","factor","factor"))
 
     bg <- ballgown(dataDir = ".", samplePattern="ERR", pData=pheno_data)
 
     # Get Gene Symbols of Transcripts 
-    gene_symbols <- getGenes("!{annotation}", structure(bg)$trans, UCSC=!{UCSC_annotation}, attribute="gene_name")
+    gene_symbols <- getGenes("!{annotation_f}", structure(bg)$trans, UCSC=!{UCSC_annotation}, attribute="gene_name")
     vector1 <- sapply(gene_symbols, function(x){as.vector(x)})
     gene_symbols_vector <- sapply(vector1, function(x){toString(x)})
     expr(bg)$trans$gene_name = gene_symbols_vector
 
-    bg_filt <- subset(bg, "rowVars(texpr(bg)) > 1", genomesubset=TRUE)
+    results_transcripts <-  stattest(bg, feature='transcript', covariate='sex',
+                            getFC=TRUE, meas='FPKM')
 
-    results_transcripts <-  stattest(bg_filt, feature='transcript', covariate='sex',
-                            adjustvars=c('population'), getFC=TRUE, meas='FPKM')
+    results_genes <-  stattest(bg, feature='gene', covariate='sex',
+                      getFC=TRUE, meas='FPKM')
 
-    results_genes <-  stattest(bg_filt, feature='gene', covariate='sex',
-                      adjustvars=c('population'), getFC=TRUE, meas='FPKM')
-
-    results_transcripts <- data.frame(geneName=ballgown::geneNames(bg_filt),
-                           geneID=ballgown::geneIDs(bg_filt), results_transcripts)
+    results_transcripts <- data.frame(geneName=ballgown::geneNames(bg),
+                           geneID=ballgown::geneIDs(bg), results_transcripts)
 
     results_transcripts <- arrange(results_transcripts, pval)
     results_genes <-  arrange(results_genes, pval)
 
     write.csv(results_transcripts, "transcripts_results.csv", row.names=FALSE)
     write.csv(results_genes, "genes_results.csv", row.names=FALSE)
-
-    subset(results_transcripts,results_transcripts$qval<0.05)
-    subset(results_genes,results_genes$qval<0.05) 
-
-    tropical= c('darkorange', 'dodgerblue', 'hotpink', 'limegreen', 'yellow')
-    palette(tropical)
-
-    fpkm = texpr(bg,meas="FPKM")
-    fpkm = log2(fpkm+1)
-
-    png('Fig3.png') 
-    boxplot(fpkm,col=as.numeric(pheno_data$sex), las=2, ylab='log2(FPKM+1)')
-    dev.off()
-
-    # Get the transcript ID for "GTPBP6" [12] in protocol 
-    GTPBP6 <- subset(results_transcripts,geneName=='GTPBP6',select=id)
-    GTPBP6_id <- as.numeric(as.character(GTPBP6$id))
-
-    ballgown::transcriptNames(bg)[GTPBP6_id]
-    ballgown::geneNames(bg)[GTPBP6_id]
-
-    png('Fig4.png')
-    plot(fpkm[GTPBP6_id,] ~ pheno_data$sex, border=c(1,2),
-        main=paste(ballgown::geneNames(bg)[GTPBP6_id],' : ',
-        ballgown::transcriptNames(bg)[GTPBP6_id]),pch=19, xlab="Sex", 
-        ylab='log2(FPKM+1)')
-    points(fpkm[12,] ~ jitter(as.numeric(pheno_data$sex)),
-        col=as.numeric(pheno_data$sex))
-    dev.off()
-    
-    # Find the transcipt ID for XIST
-    XIST_num <- grep("XIST", results_transcripts$geneName)[1]
-    XIST_id <-  as.numeric(as.character(results_transcripts[11,]$id))
- 
-    png('Fig5.png') 
-    plotTranscripts(ballgown::geneIDs(bg)[XIST_id], bg, 
-        main=c('Gene XIST in sample ERR188234'), sample=c('ERR188234')) 
-    dev.off()   
 
     '''
 }
