@@ -69,7 +69,8 @@ if( !params.download_genome && !index_file1.exists() && !params.run_index)
 
 if( params.download_genome ) {
     process download_genome {
-
+    publishDir = [path: "${params.output}/genome", mode: 'copy', overwrite: 'true' ]
+ 
             input:
             val (params.genome_address)
 
@@ -87,7 +88,7 @@ if( params.download_genome ) {
     }
 } else { 
     Channel 
-        .fromPath { genome_file}
+        .fromPath ( genome_file )
         .set { genomes }
 }
 
@@ -98,6 +99,8 @@ if( params.download_genome ) {
 
 if( params.download_annotation ) {
   process download_annotation {
+
+            publishDir = [path: "${params.output}/annotation", mode: 'copy', overwrite: 'true' ]
 
             input:
             val (params.annotation_address)
@@ -146,11 +149,13 @@ Channel
 
 if (params.run_index) {
     process genome_index {
+        publishDir = [path: "${params.output}", mode: 'copy', overwrite: 'true' ]
+
         input:
         file genome_file from genomes
 
         output:
-        set val ("genome_index"), file("index_dir") into genome_index
+        set val ("genome_index"), file("genomeindex") into genome_index
 
         script:
         //
@@ -158,27 +163,29 @@ if (params.run_index) {
         //
         """
         hisat2-build ${genome_file} genome_index
-        mkdir index_dir
-        mv genome_index* index_dir/.
+        mkdir genomeindex
+        mv genome_index* genomeindex/.
         """
     }
 }
 else {
     process premade_index {
+        publishDir = [path: "${params.output}", mode: 'copy', overwrite: 'true' ]
+
         input:
         file(index_dir)
         val(index_name)
 
         output:
-        set val(index_name), file("index_dir") into genome_index
+        set val(index_name), file("genomeindex") into genome_index
 
         script:
         //
         // Premade HISAT2 genome index
         //
         """
-        mkdir index_dir
-        cp ${index_dir}/${index_name}.*.ht2 index_dir/.
+        mkdir genomeindex
+        cp ${index_dir}/${index_name}.*.ht2 genomeindex/.
         """
     }
 }    
@@ -203,6 +210,7 @@ if (params.use_sra) {
         // SRA Cache Check and Download
         //
         """
+        vdb-config --root -s /repository/user/main/public/root=\${PWD}/ncbi
         prefetch -a "/home/sra_user/.aspera/connect/bin/ascp|/home/sra_user/.aspera/connect/etc/asperaweb_id_dsa.openssh" -t fasp ${sra_id}        
         """
     }
@@ -210,6 +218,8 @@ if (params.use_sra) {
 
 if (params.use_sra) {  
     process sra_mapping {
+
+        publishDir = [path: "${params.output}/mapped_sams", mode: 'copy', overwrite: 'true' ]
         tag "reads: $sra_id"
 
         input:
@@ -224,13 +234,34 @@ if (params.use_sra) {
         // HISAT2 mapper using SRAToolkit with ncbi-vdb support
         //
         """
-        fastq-dump --split-files ${sra_id}
-        hisat2 -x ${index_dir}/${index_name} -1 ${sra_id}_1.fastq -2 ${sra_id}_2.fastq -S ${sra_id}.sam
+        sra_paired() {
+          local SRA="\$1"
+          local x=\$(
+            fastq-dump -I -X 1 -Z --split-spot "\$SRA" 2>/dev/null \
+              | awk '{if(NR % 2 == 1) print substr(\$1,length(\$1),1)}' \
+              | uniq \
+              | wc -l
+          )
+          [[ \$x == 2 ]]
+        }
+
+        if sra_paired "$sra_id"; then
+            echo "$sra_id contains paired-end sequencing data"
+            fastq-dump --split-files ${sra_id}
+            hisat2 -x ${index_dir}/${index_name} -1 ${sra_id}_1.fastq -2 ${sra_id}_2.fastq -S ${sra_id}.sam
+        else
+            echo "$sra_id does not contain paired-end sequencing data"
+            fastq-dump ${sra_id}
+            hisat2 -x ${index_dir}/${index_name} -U ${sra_id}.fastq -S ${sra_id}.sam
+        fi
+   
         """
     }
 }
 else {
     process mapping {
+
+        publishDir = [path: "${params.output}/mapped_sams", mode: 'copy', overwrite: 'true' ]
         tag "reads: $name"
 
         input:
@@ -258,6 +289,8 @@ else {
 
 
 process sam2bam {
+
+    publishDir = [path: "${params.output}/mapped_bams", mode: 'copy', overwrite: 'true' ]
     tag "sam2bam: $name"
 
     input:
@@ -279,6 +312,8 @@ process sam2bam {
 hisat2_bams.into { hisat2_bams1; hisat2_bams2 } 
 
 process stringtie_assemble_transcripts {
+
+    publishDir = [path: "${params.output}/stringtie_transcripts", mode: 'copy', overwrite: 'true' ]
     tag "stringtie assemble transcripts: $name"
 
     input:
@@ -309,6 +344,8 @@ hisat2_transcripts1
   .set { GTF_filenames }
 
 process merge_stringtie_transcripts {
+
+    publishDir = [path: "${params.output}/merged_stringtie_transcripts", mode: 'copy', overwrite: 'true' ]
     tag "merge stringtie transcripts"
 
     input:
@@ -331,6 +368,8 @@ process merge_stringtie_transcripts {
 merged_transcripts.into { merged_transcripts1; merged_transcripts2 }
 
 process transcript_abundance {
+
+    publishDir = [path: "${params.output}/stringtie_abundances", mode: 'copy', overwrite: 'true' ]
     tag "reads: $name"
 
     input:
@@ -350,6 +389,8 @@ process transcript_abundance {
 }
 
 process gffcompare {
+
+    publishDir = [path: "${params.output}/gffcompare", mode: 'copy', overwrite: 'true' ]
     tag "gffcompare"
     
     input:
@@ -372,6 +413,8 @@ process gffcompare {
 
 
 process ballgown {
+
+    publishDir = [path: "${params.output}/ballgown", mode: 'copy', overwrite: 'true' ]
     tag "ballgown"
 
     input:
