@@ -218,6 +218,9 @@ if( params.use_sra ) {
 
     process sra_validate {
 
+        errorStrategy retry
+        maxRetries 5
+
         input:
         val (OK) from prefetched_sras1.toList()
 
