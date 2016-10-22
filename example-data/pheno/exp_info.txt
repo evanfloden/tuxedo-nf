@@ -1,0 +1,5 @@
+ids	sex	population
+ERR188273	female	YRI
+ERR188383	male	GBR
+ERR188428	female	GBR
+ERR188454	male	YRI
