@@ -37,7 +37,6 @@ log.info "UCSC annotation        : ${params.UCSC_annotation}"
 log.info "run index              : ${params.run_index}"
 log.info "use SRA                : ${params.use_sra}"
 log.info "SRA ids                : ${params.sra_ids}"
-log.info "NCBI reads cache       : ${params.cache}"
 log.info "output                 : ${params.output}"
 log.info "\n"
 
@@ -54,7 +53,6 @@ index_file1                   = index_file + ".1.ht2"
 index_name                    = index_file.getFileName()
 index_dir                     = index_file.getParent()
 sra_ids_list                  = params.sra_ids.tokenize(",") 
-cache                         = file(params.cache)
 
 
 /*
@@ -143,13 +141,16 @@ Channel
     .from( sra_ids_list )
     .set { sra_read_ids }
 
+Channel
+    .fromPath ( pheno_file )
+    .set { phenotypes }
 
 // GENOME INDEXING
 // ===============
 
 if (params.run_index) {
     process genome_index {
-        publishDir = [path: "${params.output}", mode: 'copy', overwrite: 'true' ]
+        publishDir = [path: "${baseDir/cache}", mode: 'copy', overwrite: 'true' ]
 
         input:
         file genome_file from genomes
@@ -190,20 +191,17 @@ else {
     }
 }    
 
-
-
-if (params.use_sra) {
-    process sra_prefetch {
-
-        publishDir = [path: {params.cache}, mode: 'copy', overwrite: 'true' ]
+if( params.use_sra ) {
+    process sra_fetch {
         tag "sra_id: $sra_id"
+        publishDir = [path: "{params.cache}", mode: 'move', overwrite: 'true' ]
 
         input:
-        val(sra_id) from sra_read_ids
+        val (sra_id) from sra_read_ids
 
         output:
-        file "ncbi/**" optional true into sra_cache_elements
-        val (sra_id) into prefetched_sras
+        val (sra_id) into prefetched
+        file ("ncbi/**") optional true into sra_cache_elements
 
         script:
         //
@@ -213,10 +211,31 @@ if (params.use_sra) {
         vdb-config --root -s /repository/user/main/public/root=\${PWD}/ncbi
         prefetch -a "/home/sra_user/.aspera/connect/bin/ascp|/home/sra_user/.aspera/connect/etc/asperaweb_id_dsa.openssh" -t fasp ${sra_id}        
         """
+
+    }
+
+    prefetched.into { prefetched_sras1; prefetched_sras2 }
+
+    process sra_validate {
+
+        input:
+        val (OK) from prefetched_sras1.toList()
+
+        output:
+        val ( "OK" ) into validated_NCBI_cache
+
+        script:
+        //
+        // validate NCBI vdb
+        //
+        """
+        vdb-validate /ncbi_site
+        """
+
     }
 }
 
-if (params.use_sra) {  
+if( params.use_sra ) {
     process sra_mapping {
 
         publishDir = [path: "${params.output}/mapped_sams", mode: 'copy', overwrite: 'true' ]
@@ -224,7 +243,8 @@ if (params.use_sra) {
 
         input:
         set val (index_name), file(index_dir) from genome_index.first()
-        val(sra_id) from prefetched_sras
+        val ( OK ) from validated_NCBI_cache.first()
+        val ( sra_id ) from prefetched_sras2 
 
         output:
         set val(sra_id), file("${sra_id}.sam") into hisat2_sams
@@ -234,6 +254,7 @@ if (params.use_sra) {
         // HISAT2 mapper using SRAToolkit with ncbi-vdb support
         //
         """
+        vdb-config --root -s /repository/site/main/public/root=/ncbi_site
         sra_paired() {
           local SRA="\$1"
           local x=\$(
@@ -254,9 +275,8 @@ if (params.use_sra) {
             fastq-dump ${sra_id}
             hisat2 -x ${index_dir}/${index_name} -U ${sra_id}.fastq -S ${sra_id}.sam
         fi
-   
         """
-    }
+    } 
 }
 else {
     process mapping {
@@ -418,7 +438,7 @@ process ballgown {
     tag "ballgown"
 
     input:
-    file pheno_file
+    file (pheno_f) from phenotypes
     file annotation_f from annotations4
     file ballgown_dir from ballgown_data.toList()
 
@@ -434,7 +454,7 @@ process ballgown {
     '''
     #!/usr/bin/env Rscript
  
-    pheno_data_file <- "!{pheno_file}"
+    pheno_data_file <- "!{pheno_f}"
 
     library(ballgown)
     library(RSkittleBrewer)
