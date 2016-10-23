@@ -130,7 +130,7 @@ if( params.download_annotation ) {
 if ( !params.use_sra ) {
     Channel
         .fromFilePairs( params.reads, size: -1 , flat: true)
-        .ifEmpty { error "Cannot find any reads matching: ${params.seqs}" and use_sra is false}
+        .ifEmpty { error "Cannot find any reads matching: ${params.reads}" and use_sra is false}
         .set { read_files } 
 }
 
@@ -151,7 +151,7 @@ Channel
 
 if (params.run_index) {
     process genome_index {
-        publishDir = [path: "${params.output/index}", mode: 'copy', overwrite: 'true' ]
+        publishDir = [path: "${params.output}/index", mode: 'copy', overwrite: 'true' ]
 
         input:
         file genome_file from genomes
