@@ -37,6 +37,7 @@ log.info "UCSC annotation        : ${params.UCSC_annotation}"
 log.info "run index              : ${params.run_index}"
 log.info "use SRA                : ${params.use_sra}"
 log.info "SRA ids                : ${params.sra_ids}"
+log.info "NCBI cache             : ${params.cache}"
 log.info "output                 : ${params.output}"
 log.info "\n"
 
@@ -150,7 +151,7 @@ Channel
 
 if (params.run_index) {
     process genome_index {
-        publishDir = [path: "${baseDir/cache}", mode: 'copy', overwrite: 'true' ]
+        publishDir = [path: "${params.output/index}", mode: 'copy', overwrite: 'true' ]
 
         input:
         file genome_file from genomes
@@ -171,7 +172,6 @@ if (params.run_index) {
 }
 else {
     process premade_index {
-        publishDir = [path: "${params.output}", mode: 'copy', overwrite: 'true' ]
 
         input:
         file(index_dir)

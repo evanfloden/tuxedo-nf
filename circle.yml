@@ -12,14 +12,3 @@ test:
     - ./nextflow run . -with-docker :
         timeout: 1200
 
-test:
-  override:
-    - curl -fsSL get.nextflow.io | bash
-    - ./nextflow run . --run_index -with-docker :
-        timeout: 1200
-
-test:
-  override:
-    - curl -fsSL get.nextflow.io | bash
-    - ./nextflow run . --download_annotation -with-docker :
-        timeout: 1200
