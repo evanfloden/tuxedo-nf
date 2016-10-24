@@ -129,7 +129,7 @@ if( params.download_annotation ) {
 
 if ( !params.use_sra ) {
     Channel
-        .fromFilePairs( params.reads, size: -1 , flat: true)
+        .fromFilePairs( params.reads, size: -1)
         .ifEmpty { error "Cannot find any reads matching: ${params.reads}" and use_sra is false}
         .set { read_files } 
 }
@@ -301,7 +301,7 @@ else {
         def single = reads instanceof Path
         if( single ) 
             """
-            hisat2 -x ${index_dir}/${index_name} -U ${reads[0]} -S ${name}.sam
+            hisat2 -x ${index_dir}/${index_name} -U ${reads} -S ${name}.sam
             """
         else 
             """
