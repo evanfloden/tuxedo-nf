@@ -129,8 +129,8 @@ if( params.download_annotation ) {
 
 if ( !params.use_sra ) {
     Channel
-        .fromFilePairs( params.reads, size: -1 , flat: true)
-        .ifEmpty { error "Cannot find any reads matching: ${params.seqs}" and use_sra is false}
+        .fromFilePairs( params.reads, size: -1 )
+        .ifEmpty { error "Cannot find any reads matching: ${params.reads}" and use_sra is false}
         .set { read_files } 
 }
 
@@ -151,7 +151,7 @@ Channel
 
 if (params.run_index) {
     process genome_index {
-        publishDir = [path: "${params.output/index}", mode: 'copy', overwrite: 'true' ]
+        publishDir = [path: "${params.output}/index", mode: 'copy', overwrite: 'true' ]
 
         input:
         file genome_file from genomes
@@ -301,7 +301,7 @@ else {
         def single = reads instanceof Path
         if( single ) 
             """
-            hisat2 -x ${index_dir}/${index_name} -U ${reads[0]} -S ${name}.sam
+            hisat2 -x ${index_dir}/${index_name} -U ${reads} -S ${name}.sam
             """
         else 
             """
@@ -465,9 +465,9 @@ process ballgown {
     library(dplyr)
     library(devtools)
 
-    pheno_data <- read.table(pheno_data_file, header=TRUE, colClasses = c("factor","factor","factor"))
+    pheno_data <- read.table(pheno_data_file, header=TRUE, colClasses = c("factor","factor"))
 
-    bg <- ballgown(dataDir = ".", samplePattern="ERR", pData=pheno_data)
+    bg <- ballgown(dataDir = ".", samplePattern="SRR", pData=pheno_data)
 
     # Get Gene Symbols of Transcripts 
     gene_symbols <- getGenes("!{annotation_f}", structure(bg)$trans, UCSC=!{UCSC_annotation}, attribute="gene_name")
@@ -475,10 +475,10 @@ process ballgown {
     gene_symbols_vector <- sapply(vector1, function(x){toString(x)})
     expr(bg)$trans$gene_name = gene_symbols_vector
 
-    results_transcripts <-  stattest(bg, feature='transcript', covariate='sex',
+    results_transcripts <-  stattest(bg, feature='transcript', covariate='groups',
                             getFC=TRUE, meas='FPKM')
 
-    results_genes <-  stattest(bg, feature='gene', covariate='sex',
+    results_genes <-  stattest(bg, feature='gene', covariate='groups',
                       getFC=TRUE, meas='FPKM')
 
     results_transcripts <- data.frame(geneName=ballgown::geneNames(bg),
