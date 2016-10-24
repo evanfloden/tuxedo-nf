@@ -1,8 +1,6 @@
 # Tuxedo-NF
 
-A Nextflow implementation of the Tuxedo Suite of Tools
-
-Workflow is based on the 2016 *Nature Protocols* publication: ["Transcript-level expression analysis of RNA-seq experiments with HISAT, StringTie and Ballgown"](http://www.nature.com/nprot/journal/v11/n9/full/nprot.2016.095.html)
+A Nextflow implementation of the Tuxedo Suite of Tools Workflow is based on the 2016 *Nature Protocols* publication: ["Transcript-level expression analysis of RNA-seq experiments with HISAT, StringTie and Ballgown"](http://www.nature.com/nprot/journal/v11/n9/full/nprot.2016.095.html)
 
 [![nextflow](https://img.shields.io/badge/nextflow-%E2%89%A50.22.0-brightgreen.svg)](http://nextflow.io)
 
