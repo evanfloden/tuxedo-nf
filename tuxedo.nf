@@ -194,7 +194,7 @@ else {
 if( params.use_sra ) {
     process sra_fetch {
         tag "sra_id: $sra_id"
-        publishDir = [path: "{params.cache}", mode: 'move', overwrite: 'true' ]
+        publishDir = [path: "${params.cache}", mode: 'move', overwrite: 'true' ]
 
         input:
         val (sra_id) from sra_read_ids
@@ -218,8 +218,8 @@ if( params.use_sra ) {
 
     process sra_validate {
 
-        errorStrategy retry
-        maxRetries 5
+        errorStrategy 'retry'
+        maxRetries 3
 
         input:
         val (OK) from prefetched_sras1.toList()
