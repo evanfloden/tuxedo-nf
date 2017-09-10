@@ -90,3 +90,10 @@ RUN wget http://ccb.jhu.edu/software/stringtie/dl/gffcompare-0.9.8.tar.gz -O /op
     make && \
     chmod +x gffcompare
 ENV PATH /opt/gffcompare-0.9.8:$PATH
+
+RUN wget http://www.bioinformatics.babraham.ac.uk/projects/fastqc/fastqc_v0.11.5.zip && \
+    unzip fastqc_v0.11.5.zip && \
+    chmod 755 /FastQC/fastqc  && \
+    ln -s /FastQC/fastqc bin/fastqc && \
+    rm fastqc_v0.11.5.zip
+

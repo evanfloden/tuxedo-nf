@@ -24,21 +24,31 @@
  * Evan Floden <evanfloden@gmail.com> 
  */
 
-log.info "T U X E D O - N F  ~  version 0.1"
+log.info "T U X E D O - N F  ~  version 0.2"
 log.info "====================================="
-log.info "reads                  : ${params.reads}"
-log.info "genome                 : ${params.genome}"
-log.info "index                  : ${params.index}"
-log.info "phenotype info         : ${params.pheno}"               
-log.info "annotation             : ${params.annotation}"
+
+if ( !params.use_sra )             { log.info "reads                  : ${params.reads}"}
+if ( params.use_sra)               { log.info "reads                  : ${params.sra_ids}"}
+
+if ( !params.download_genome )     { log.info "genome                 : ${params.genome}"}
+if ( params.download_genome )      { log.info "genome                 : ${params.genome_address}"}
+
+if ( params.run_index )            { log.info "index                  : ${params.index}"}
+
+if ( !params.download_annotation ) { log.info "annotation             : ${params.annotation}"}
+if ( params.download_annotation )  { log.info "annotation             : ${params.annotation_address}"}
+
+if ( params.ballgown )         { log.info "phenotype info         : ${params.pheno}"}               
+
 log.info "download genome        : ${params.download_genome}"
 log.info "download annotation    : ${params.download_annotation}"
 log.info "UCSC annotation        : ${params.UCSC_annotation}"
 log.info "run index              : ${params.run_index}"
 log.info "use SRA                : ${params.use_sra}"
-log.info "SRA ids                : ${params.sra_ids}"
+log.info "run ballgown           : ${params.ballgown}"
 log.info "NCBI cache             : ${params.cache}"
 log.info "output                 : ${params.output}"
+log.info "====================================="
 log.info "\n"
 
 /*
@@ -54,7 +64,7 @@ index_file1                   = index_file + ".1.ht2"
 index_name                    = index_file.getFileName()
 index_dir                     = index_file.getParent()
 sra_ids_list                  = params.sra_ids.tokenize(",") 
-
+multiqc_file                  = file(params.multiqc)
 
 /*
  * validate and create a channel for genome/index input files
@@ -251,6 +261,7 @@ if( params.use_sra ) {
 
         output:
         set val(sra_id), file("${sra_id}.sam") into hisat2_sams
+        file("fastqc_${sample_id}_logs") into fastqc_ch
 
         script:
         //
@@ -269,13 +280,17 @@ if( params.use_sra ) {
           [[ \$x == 2 ]]
         }
 
+        mkdir fastqc_${sra_id}_logs
+
         if sra_paired "$sra_id"; then
             echo "$sra_id contains paired-end sequencing data"
             fastq-dump --split-files ${sra_id}
+            fastqc -o fastqc_${sra_id}_logs -f fastq -q ${sra_id}_1.fastq ${sra_id}_2.fastq
             hisat2 -x ${index_dir}/${index_name} -1 ${sra_id}_1.fastq -2 ${sra_id}_2.fastq -S ${sra_id}.sam
         else
             echo "$sra_id does not contain paired-end sequencing data"
             fastq-dump ${sra_id}
+            fastqc -o fastqc_${sra_id}_logs -f fastq -q ${sra_id}.fastq
             hisat2 -x ${index_dir}/${index_name} -U ${sra_id}.fastq -S ${sra_id}.sam
         fi
         """
@@ -285,14 +300,15 @@ else {
     process mapping {
 
         publishDir = [path: "${params.output}/mapped_sams", mode: 'copy', overwrite: 'true' ]
-        tag "reads: $name"
+        tag "reads: $sample_id"
 
         input:
         set val(index_name), file(index_dir) from genome_index.first()
-        set val(name), file(reads) from read_files
+        set val(sample_id), file(reads) from read_files
 
         output:
-        set val(name), file("${name}.sam") into hisat2_sams
+        set val(sample_id), file("${sample_id}.sam") into hisat2_sams
+        file("fastqc_${sample_id}_logs") into fastqc_ch
 
         script:
         //
@@ -301,11 +317,15 @@ else {
         def single = reads instanceof Path
         if( single ) 
             """
-            hisat2 -x ${index_dir}/${index_name} -U ${reads} -S ${name}.sam
+            mkdir fastqc_${sample_id}_logs
+            fastqc -o fastqc_${sample_id}_logs -f fastq -q ${reads}            
+            hisat2 -x ${index_dir}/${index_name} -U ${reads} -S ${sample_id}.sam
             """
         else 
             """
-            hisat2 -x ${index_dir}/${index_name} -1 ${reads[0]} -2 ${reads[1]} -S ${name}.sam
+            mkdir fastqc_${sample_id}_logs
+            fastqc -o fastqc_${sample_id}_logs -f fastq -q ${reads}
+            hisat2 -x ${index_dir}/${index_name} -1 ${reads[0]} -2 ${reads[1]} -S ${sample_id}.sam
             """
     }
 }
@@ -435,6 +455,25 @@ process gffcompare {
 }	
 
 
+process multiqc {
+    publishDir params.output, mode:'copy'
+       
+    input:
+    file('*') from fastqc_ch.collect()
+    file(config) from multiqc_file
+    
+    output:
+    file('multiqc_report.html')  
+     
+    script:
+    """
+    cp $config/* .
+    echo "custom_logo: \$PWD/logo.png" >> multiqc_config.yaml
+    multiqc . 
+    """
+}
+
+
 process ballgown {
 
     publishDir = [path: "${params.output}/ballgown", mode: 'copy', overwrite: 'true' ]
@@ -449,6 +488,8 @@ process ballgown {
     file("genes_results.csv") into sig_genes
     file("transcripts_results.csv") into sig_transcripts
 
+    when:
+    params.ballgown
 
     shell:
     //
@@ -491,6 +532,10 @@ process ballgown {
     write.csv(results_genes, "genes_results.csv", row.names=FALSE)
 
     '''
+}
+
+workflow.onComplete {
+        println ( workflow.success ? "\nDone! Open the following report in your browser --> $params.output/multiqc_report.html\n" : "Oops .. something went wrong" )
 }
 
 
