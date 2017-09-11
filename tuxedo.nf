@@ -33,7 +33,8 @@ if ( params.use_sra)               { log.info "reads                  : ${params
 if ( !params.download_genome )     { log.info "genome                 : ${params.genome}"}
 if ( params.download_genome )      { log.info "genome                 : ${params.genome_address}"}
 
-if ( params.run_index )            { log.info "index                  : ${params.index}"}
+if ( params.run_index && !params.download_genome) { 
+                                     log.info "index                  : ${params.index}"}
 
 if ( !params.download_annotation ) { log.info "annotation             : ${params.annotation}"}
 if ( params.download_annotation )  { log.info "annotation             : ${params.annotation_address}"}
@@ -255,13 +256,13 @@ if( params.use_sra ) {
         tag "reads: $sra_id"
 
         input:
-        set val (index_name), file(index_dir) from genome_index.first()
-        val ( OK ) from validated_NCBI_cache.first()
+        set val (index_name), file(index_dir) from genome_index
+        val ( OK ) from validated_NCBI_cache
         val ( sra_id ) from prefetched_sras2 
 
         output:
         set val(sra_id), file("${sra_id}.sam") into hisat2_sams
-        file("fastqc_${sample_id}_logs") into fastqc_ch
+        file("fastqc_${sra_id}_logs") into fastqc_ch
 
         script:
         //
@@ -361,7 +362,7 @@ process stringtie_assemble_transcripts {
 
     input:
     set val(name), file(bam) from hisat2_bams1
-    file (annotation_f) from annotations1.first()
+    file (annotation_f) from annotations1
 
     output:
     file("${name}.gtf") into hisat2_transcripts
