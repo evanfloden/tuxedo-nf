@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Centre for Genomic Regulation (CRG) and the authors.
+ * Copyright (c) 2016-2018, Centre for Genomic Regulation (CRG) and the authors.
  *
  *   This file is part of 'Tuxedo-NF'.
  *
