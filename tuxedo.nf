@@ -1,3 +1,5 @@
+#!/usr/bin/env nextflow
+
 /*
  * Copyright (c) 2016-2018, Centre for Genomic Regulation (CRG) and the authors.
  *
